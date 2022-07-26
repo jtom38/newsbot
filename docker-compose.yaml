@@ -1,0 +1,50 @@
+# Create your .env in the same directory
+
+# docker compose --env-file .env up -d
+
+version: "3"
+
+networks:
+  newsbot:
+    
+services:
+  # Posgres is required for this service to work.
+  # You will need to run the migrations before starting the app.
+  # See the readme for details.
+  collector:
+    image: ghcr.io/jtom38/newsbot.collector.api:master
+    restart: unless-stopped
+    environment:
+      SERVER_ADDRESS: "192.168.1.2"
+      SQL_CONNECTION_STRING: ${CONNECTION_STRING}
+      GOOSE_DRIVER: "postgres"
+      GOOSE_DBSTRING: ${GOOSE_STRING}
+
+      FEATURE_ENABLE_REDDIT_BACKEND: true
+      REDDIT_PULL_HOT: "true"
+      REDDIT_PULL_NSFW: "true"
+      REDDIT_PULL_TOP: "false"
+
+      FEATURE_ENABLE_YOUTUBE_BACKEND: true
+
+      # Set your Twitch Developer ID and Secrets here and they will be used to collect updates.
+      FEATURE_ENABLE_TWITCH_BACKEND: true
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET}
+
+      # If you want to collect news on Final Fantasy XIV, set this to true
+      FEATURE_ENABLE_FFXIV_BACKEND:  true
+    ports:
+      - 8081:8081
+    networks:
+      - newsbot
+
+  portal:
+    image: ghcr.io/jtom38/newsbot.portal:master
+    restart: unless-stopped
+    environment:
+      API_ADDRESS: http://192.168.1.2:8081
+    ports:
+      - 8080:8080
+    networks:
+      - newsbot
